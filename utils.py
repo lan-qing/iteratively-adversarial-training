@@ -1,6 +1,8 @@
 import sys
 import time
 
+import torch
+
 
 def cprint(color: str, text: str, **kwargs) -> None:
     if color[0] == '*':
@@ -68,8 +70,9 @@ def train(train_loader, model, criterion, optimizer, epoch, half=True, print_fre
 
     # switch to train mode
     model.train()
-
     end = time.time()
+
+    loss, prec1 = None, None
     for i, (input, target) in enumerate(train_loader):
 
         # measure data loading time
@@ -109,7 +112,58 @@ def train(train_loader, model, criterion, optimizer, epoch, half=True, print_fre
                   'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
                 epoch, i, len(train_loader), batch_time=batch_time,
                 data_time=data_time, loss=losses, top1=top1))
-        return loss, prec1
+    return loss, prec1
+
+
+def validate(val_loader, model, criterion, half=True, print_freq=50):
+    """
+    Run evaluation
+    """
+    batch_time = AverageMeter()
+    losses = AverageMeter()
+    top1 = AverageMeter()
+
+    # switch to evaluate mode
+    model.eval()
+
+    end = time.time()
+    with torch.no_grad():
+        for i, (input, target) in enumerate(val_loader):
+            target = target.cuda()
+            input_var = input.cuda()
+            target_var = target.cuda()
+
+            if half:
+                input_var = input_var.half()
+
+            # compute output
+            output = model(input_var)
+            loss = criterion(output, target_var)
+
+            output = output.float()
+            loss = loss.float()
+
+            # measure accuracy and record loss
+            prec1 = accuracy(output.data, target)[0]
+            losses.update(loss.item(), input.size(0))
+            top1.update(prec1.item(), input.size(0))
+
+            # measure elapsed time
+            batch_time.update(time.time() - end)
+            end = time.time()
+
+            if i % print_freq == 0:
+                print('Test: [{0}/{1}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+                      'Loss {loss.val:.4f} ({loss.avg:.4f})\t'
+                      'Prec@1 {top1.val:.3f} ({top1.avg:.3f})'.format(
+                    i, len(val_loader), batch_time=batch_time, loss=losses,
+                    top1=top1))
+
+    print(' * Prec@1 {top1.avg:.3f}'
+          .format(top1=top1))
+
+    return losses.avg, top1.avg
 
 
 if __name__ == '__main__':
