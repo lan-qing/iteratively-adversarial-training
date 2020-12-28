@@ -57,7 +57,7 @@ class ResNet20Wrapper(NetWrapper):
         if cuda:
             self.model.cuda()
 
-    def fit(self, train_loader, lr=0.1, weight_decay=0.0):
+    def fit(self, train_loader, lr=0.1, weight_decay=0.0, epoch=None):
         optimizer = torch.optim.SGD(self.model.parameters(), lr, weight_decay=weight_decay)
         criterion = nn.CrossEntropyLoss().cuda()
         if self.half:
@@ -81,7 +81,6 @@ class ResNet20Wrapper(NetWrapper):
     def generate_adv_data(self, attack, data_loader):
         batch_data = []
         for i, (input_data, target) in enumerate(data_loader):
-            print(f"Adv attack epoch {i}")
             if self.half:
                 input_data = input_data.half()
             image = attack(self.model, input_data, target, half=self.half)
