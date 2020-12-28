@@ -73,13 +73,13 @@ def train(train_loader, model, criterion, optimizer, epoch, half=True, print_fre
     end = time.time()
 
     loss, prec1 = None, None
-    for i, (input, target) in enumerate(train_loader):
+    for i, (input_data, target) in enumerate(train_loader):
 
         # measure data loading time
         data_time.update(time.time() - end)
 
         target = target.cuda()
-        input_var = input.cuda()
+        input_var = input_data.cuda()
         target_var = target
         if half:
             input_var = input_var.half()
@@ -97,8 +97,8 @@ def train(train_loader, model, criterion, optimizer, epoch, half=True, print_fre
         loss = loss.float()
         # measure accuracy and record loss
         prec1 = accuracy(output.data, target)[0]
-        losses.update(loss.item(), input.size(0))
-        top1.update(prec1.item(), input.size(0))
+        losses.update(loss.item(), input_data.size(0))
+        top1.update(prec1.item(), input_data.size(0))
 
         # measure elapsed time
         batch_time.update(time.time() - end)
@@ -128,9 +128,9 @@ def validate(val_loader, model, criterion, half=True, print_freq=50):
 
     end = time.time()
     with torch.no_grad():
-        for i, (input, target) in enumerate(val_loader):
+        for i, (input_data, target) in enumerate(val_loader):
             target = target.cuda()
-            input_var = input.cuda()
+            input_var = input_data.cuda()
             target_var = target.cuda()
 
             if half:
@@ -145,8 +145,8 @@ def validate(val_loader, model, criterion, half=True, print_freq=50):
 
             # measure accuracy and record loss
             prec1 = accuracy(output.data, target)[0]
-            losses.update(loss.item(), input.size(0))
-            top1.update(prec1.item(), input.size(0))
+            losses.update(loss.item(), input_data.size(0))
+            top1.update(prec1.item(), input_data.size(0))
 
             # measure elapsed time
             batch_time.update(time.time() - end)

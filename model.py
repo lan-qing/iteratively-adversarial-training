@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn as nn
 
@@ -30,10 +31,26 @@ class NetWrapper():
         self.model.load_state_dict(state['state_dict'])
 
 
+class Normalize(nn.Module):
+    def __init__(self, mean, std):
+        super(Normalize, self).__init__()
+        self.register_buffer('mean', torch.Tensor(mean))
+        self.register_buffer('std', torch.Tensor(std))
+
+    def forward(self, input):
+        # Broadcasting
+        mean = self.mean.reshape(1, 3, 1, 1)
+        std = self.std.reshape(1, 3, 1, 1)
+        return (input - mean) / std
+
+
 class ResNet20Wrapper(NetWrapper):
     def __init__(self, half=True, cuda=True):
         super(ResNet20Wrapper).__init__()
-        self.model = resnet20()
+        norm_layer = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+        self.model = nn.Sequential(norm_layer,
+                                   resnet20()
+                                   )
         self.half = half
         if self.half:
             self.model.half()
@@ -61,6 +78,16 @@ class ResNet20Wrapper(NetWrapper):
         loss, prec = validate(val_loader, self.model, criterion)
         return loss, prec
 
+    def generate_adv_data(self, attack, data_loader):
+        batch_data = []
+        for i, (input_data, target) in enumerate(data_loader):
+            print(f"Adv attack epoch {i}")
+            if self.half:
+                input_data = input_data.half()
+            image = attack(self.model, input_data, target, half=self.half)
+            batch_data.append(image.cpu())
+        return np.concatenate(batch_data, axis=0)
+
 
 if __name__ == '__main__':
     import torchvision.transforms as transforms
@@ -68,14 +95,11 @@ if __name__ == '__main__':
 
     batch_size = 100
     workers = 4
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                                     std=[0.229, 0.224, 0.225])
     train_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='../data', train=True, transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
             transforms.ToTensor(),
-            normalize,
         ]), download=True),
         batch_size=batch_size, shuffle=True,
         num_workers=workers, pin_memory=True)
@@ -83,7 +107,6 @@ if __name__ == '__main__':
     val_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='../data', train=False, transform=transforms.Compose([
             transforms.ToTensor(),
-            normalize,
         ])),
         batch_size=batch_size, shuffle=False,
         num_workers=workers, pin_memory=True)
