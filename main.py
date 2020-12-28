@@ -72,6 +72,8 @@ def main():
     seed = 42
     signature = "20201228"
     rootpath = f"results/{signature}_seed{seed}/"
+    if not os.path.isdir(rootpath):
+        os.mkdir(rootpath)
     set_seed(seed)
 
     ## D0 -> M0
@@ -106,11 +108,10 @@ def main():
         trainset = MyDataset(root=trainset_path, transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
-            transforms.ToTensor(),
         ]))
-        valset = MyDataset(root=testset_path, transform=transforms.Compose([
-            transforms.ToTensor(),
-        ]))
+        valset = MyDataset(root=testset_path)
+        trainset.load()
+        valset.load()
         model = data2model(savepath, trainset, valset)
 
     tmpseed = random.randint(0, 2147483647)

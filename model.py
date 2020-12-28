@@ -20,7 +20,7 @@ class NetWrapper():
     def validate(self, val_loader):
         raise NotImplementedError
 
-    def save(self, filename='checkpoint.th'):
+    def save(self, filename='checkpoint.pt'):
         state = {
             'state_dict': self.model.state_dict(),
         }
@@ -64,7 +64,7 @@ class ResNet20Wrapper(NetWrapper):
             criterion.half()
 
         print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-        loss, prec = train(train_loader, self.model, criterion, optimizer, epoch)
+        loss, prec = train(train_loader, self.model, criterion, optimizer, epoch, half=self.half)
 
         return loss, prec
 
@@ -75,7 +75,7 @@ class ResNet20Wrapper(NetWrapper):
         criterion = nn.CrossEntropyLoss().cuda()
         if self.half:
             criterion.half()
-        loss, prec = validate(val_loader, self.model, criterion)
+        loss, prec = validate(val_loader, self.model, criterion, half=self.half)
         return loss, prec
 
     def generate_adv_data(self, attack, data_loader):

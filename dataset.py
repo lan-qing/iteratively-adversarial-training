@@ -1,6 +1,7 @@
 import os
 
 from PIL import Image
+import torch
 import numpy as np
 from torchvision.datasets.vision import VisionDataset
 
@@ -20,10 +21,38 @@ class MyDataset(VisionDataset):
             print("Please firstly load data.")
 
         img, target = self.data[index], self.targets[index]
-        img = Image.fromarray(img)
+        ## It seems a byg of pytorch.
+        """
+        >>> a = torch.tensor([1,2])
+        >>> a.flip(-1)
+        tensor([2, 1])
+        >>> a = torch.tensor([1,2]).cuda()
+        >>> a.flip(-1)
+        tensor([2, 1], device='cuda:0')
+        >>> a = torch.tensor([1,2]).half().cuda()
+        >>> a.flip(-1)
+        tensor([2., 1.], device='cuda:0', dtype=torch.float16)
+        >>> a = torch.tensor([1,2]).half()
+        >>> a.flip(-1)
+        Traceback (most recent call last):
+            File "<input>", line 1, in <module>
+        RuntimeError: "flip_cpu" not implemented for 'Half'
+        """
+
+        img = torch.tensor(img)
+
+        flag = False
+        if img.dtype == torch.float16:
+            flag = True
+            img = img.float()
+
+        # img = Image.fromarray(img)
 
         if self.transform is not None:
             img = self.transform(img)
+
+        if flag:
+            img.half()
 
         if self.target_transform is not None:
             target = self.target_transform(target)
