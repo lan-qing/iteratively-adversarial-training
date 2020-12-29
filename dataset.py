@@ -59,7 +59,7 @@ class MyDataset(VisionDataset):
 
         return img, target
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.data)
 
     def save(self, data, targets):
@@ -71,6 +71,14 @@ class MyDataset(VisionDataset):
     def load(self):
         self.data = np.load(self.path + 'data.npy')
         self.targets = np.load(self.path + 'targets.npy')
+
+    def tofile(self, index, path):
+        data = self.data[index]
+        data = np.einsum('ijk->jki', data)
+        data = (data * 255).round()
+        data = np.uint8(data)
+        img = Image.fromarray(data)
+        img.save(path)
 
 
 if __name__ == '__main__':

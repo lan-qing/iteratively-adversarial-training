@@ -49,11 +49,11 @@ def data2model(savepath, trainset, valset, batch_size=100, workers=4):
 
 def model2data(model, basetrainset, basetestset, trainset_path, testset_path, batch_size=100, workers=4, adveps=0.1):
     test_loader = torch.utils.data.DataLoader(basetestset,
-                                              batch_size=batch_size, shuffle=True,
+                                              batch_size=batch_size, shuffle=False,
                                               num_workers=workers, pin_memory=True)
 
     train_loader = torch.utils.data.DataLoader(basetrainset,
-                                               batch_size=batch_size, shuffle=True,
+                                               batch_size=batch_size, shuffle=False,
                                                num_workers=workers, pin_memory=True)
 
     attack = functools.partial(pgd_attack, eps=adveps)
