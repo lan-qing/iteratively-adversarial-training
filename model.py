@@ -45,15 +45,18 @@ class Normalize(nn.Module):
 
 
 class ResNet20Wrapper(NetWrapper):
-    def __init__(self, half=True, cuda=True):
+    def __init__(self, half=True, cuda=True, double=False):
         super(ResNet20Wrapper).__init__()
         norm_layer = Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
         self.model = nn.Sequential(norm_layer,
                                    resnet20()
                                    )
         self.half = half
+        self.double = double
         if self.half:
             self.model.half()
+        if self.double:
+            self.model.double()
         if cuda:
             self.model.cuda()
 
@@ -62,9 +65,11 @@ class ResNet20Wrapper(NetWrapper):
         criterion = nn.CrossEntropyLoss().cuda()
         if self.half:
             criterion.half()
+        if self.double:
+            criterion.double()
 
         print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-        loss, prec = train(train_loader, self.model, criterion, optimizer, epoch, half=self.half)
+        loss, prec = train(train_loader, self.model, criterion, optimizer, epoch, half=self.half, double=self.double)
 
         return loss, prec
 
@@ -75,16 +80,27 @@ class ResNet20Wrapper(NetWrapper):
         criterion = nn.CrossEntropyLoss().cuda()
         if self.half:
             criterion.half()
-        loss, prec = validate(val_loader, self.model, criterion, half=self.half)
+        loss, prec = validate(val_loader, self.model, criterion, half=self.half, double=self.double)
         return loss, prec
 
-    def generate_adv_data(self, attack, data_loader):
+    def generate_adv_data(self, attack, data_loader, print_freq=5):
+        self.model.eval()
         batch_data = []
+        batch_time = AverageMeter()
+        end = time.time()
         for i, (input_data, target) in enumerate(data_loader):
             if self.half:
                 input_data = input_data.half()
-            image = attack(self.model, input_data, target, half=self.half)
+            if self.double:
+                input_data = input_data.double()
+            image = attack(self.model, input_data, target, double=self.double)
             batch_data.append(image.cpu())
+            batch_time.update(time.time() - end)
+            end = time.time()
+            if i % print_freq == 0:
+                print('Adv Gen: [{0}/{1}]\t'
+                      'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'.format(
+                    i, len(data_loader), batch_time=batch_time))
         return np.concatenate(batch_data, axis=0)
 
 

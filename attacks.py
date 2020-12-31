@@ -2,13 +2,14 @@ import torch
 import torch.nn as nn
 
 
-def pgd_attack(model, images, labels, eps=0.3, alpha=0.01, iters=40, half=True):
+def pgd_attack(model, images, labels, eps=0.3, alpha=0.01, iters=40, half=True, double=False):
     images = images.cuda()
     labels = labels.cuda()
     loss = nn.CrossEntropyLoss()
     if half:
         loss.half()
-
+    if double:
+        loss.double()
     ori_images = images.data
 
     for i in range(iters):

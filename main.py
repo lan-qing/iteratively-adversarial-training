@@ -23,7 +23,7 @@ def set_seed(seed):
 
 
 def data2model(savepath, trainset, valset, batch_size=100, workers=4):
-    model = ResNet20Wrapper()
+    model = ResNet20Wrapper(half=False, double=True)
 
     train_loader = torch.utils.data.DataLoader(
         trainset,
@@ -35,9 +35,9 @@ def data2model(savepath, trainset, valset, batch_size=100, workers=4):
         batch_size=batch_size, shuffle=False,
         num_workers=workers, pin_memory=True)
 
-    for epoch in range(200):
+    for epoch in range(100):
         lr = 0.1
-        if epoch == 100 or epoch == 150 or epoch == 200:
+        if epoch == 50 or epoch == 75:
             lr /= 10
 
         model.fit(train_loader, lr=lr, epoch=epoch)
@@ -70,7 +70,7 @@ def model2data(model, basetrainset, basetestset, trainset_path, testset_path, ba
 
 def main():
     seed = 42
-    signature = "20201228"
+    signature = "20210101-100epoch-double"
     rootpath = f"results/{signature}_seed{seed}/"
     if not os.path.isdir(rootpath):
         os.mkdir(rootpath)
@@ -96,30 +96,31 @@ def main():
         transforms.ToTensor(),
     ]))
 
-    for it in 1, 2:
+    for it in [1, 2]:
         tmpseed = random.randint(0, 2147483647)
         set_seed(tmpseed)
 
         trainset_path = rootpath + f'iter{it}_trainset/'
         testset_path = rootpath + f'iter{it}_testset/'
-        trainset, testset = model2data(model, trainset, testset, trainset_path, testset_path)
+        model2data(model, trainset, testset, trainset_path, testset_path)
 
         savepath = rootpath + f'model{it}.pt'
         trainset = MyDataset(root=trainset_path, transform=transforms.Compose([
             transforms.RandomHorizontalFlip(),
             transforms.RandomCrop(32, 4),
         ]))
-        valset = MyDataset(root=testset_path)
-        trainset.load()
-        valset.load()
-        model = data2model(savepath, trainset, valset)
+        testset = MyDataset(root=testset_path)
+        model = data2model(savepath, trainset, testset)
+
+        trainset = MyDataset(root=trainset_path)
+        testset = MyDataset(root=testset_path)
 
     tmpseed = random.randint(0, 2147483647)
     set_seed(tmpseed)
 
     trainset_path = rootpath + f'iter{it + 1}_trainset/'
     testset_path = rootpath + f'iter{it + 1}_testset/'
-    trainset, testset = model2data(model, trainset, testset, trainset_path, testset_path)
+    model2data(model, trainset, testset, trainset_path, testset_path)
 
 
 if __name__ == '__main__':

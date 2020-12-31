@@ -12,13 +12,15 @@ class MyDataset(VisionDataset):
         self.path = root
         self.data = None
         self.targets = None
-
+        self.loaded = False
         if not os.path.isdir(self.path):
             os.makedirs(self.path)
+        elif os.path.isfile(self.path + 'data.npy') and os.path.isfile(self.path + 'targets.npy'):
+            self.load()
+
 
     def __getitem__(self, index):
-        if self.data is None:
-            print("Please firstly load data.")
+        assert self.loaded
 
         img, target = self.data[index], self.targets[index]
         ## It seems a byg of pytorch.
@@ -60,19 +62,25 @@ class MyDataset(VisionDataset):
         return img, target
 
     def __len__(self) -> int:
+        assert self.loaded
         return len(self.data)
 
     def save(self, data, targets):
+        assert not self.loaded
         self.data = data
         self.targets = targets
         np.save(self.path + 'data', data)
         np.save(self.path + 'targets', targets)
+        self.loaded = True
 
     def load(self):
+        assert not self.loaded
         self.data = np.load(self.path + 'data.npy')
         self.targets = np.load(self.path + 'targets.npy')
+        self.loaded = True
 
     def tofile(self, index, path):
+        assert self.loaded
         data = self.data[index]
         data = np.einsum('ijk->jki', data)
         data = (data * 255).round()

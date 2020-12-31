@@ -4,16 +4,18 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 
 from dataset import MyDataset
+idx = 2000
 
-path = 'results/test20201228/iter1_testset_pgd0.3/'
-
-dataset = MyDataset(path)
-dataset.load()
-dataset.tofile(0, 'tmp.png')
-
-cifartrain = datasets.CIFAR10(root='../data', train=True, transform=transforms.Compose([
+cifartest = datasets.CIFAR10(root='../data', train=False, transform=transforms.Compose([
     transforms.ToTensor(),
 ]))
-data = cifartrain.data[0]
+data = cifartest.data[idx]
 img = Image.fromarray(data)
-img.save('tmp2.png')
+img.save(f'tmp/{idx}-iter0.png')
+
+
+for i in 1,2,3:
+    path = f'results/20201231test_seed42/iter{i}_testset/'
+    dataset = MyDataset(path)
+    dataset.tofile(idx, f'tmp/{idx}-iter{i}.png')
+
