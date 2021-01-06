@@ -95,9 +95,9 @@ class ResNet20Wrapper(NetWrapper):
                 input_data = input_data.double()
             image = attack(self.model, input_data, target, double=self.double)
             batch_data.append(image.cpu())
-            batch_time.update(time.time() - end)
-            end = time.time()
             if i % print_freq == 0:
+                batch_time.update(time.time() - end)
+                end = time.time()
                 print('Adv Gen: [{0}/{1}]\t'
                       'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'.format(
                     i, len(data_loader), batch_time=batch_time))
