@@ -59,7 +59,7 @@ def accuracy(output, target, topk=(1,)):
     return res
 
 
-def train(train_loader, model, criterion, optimizer, epoch, half=True, print_freq=50, double=False):
+def train(train_loader, model, criterion, optimizer, epoch, half=True, print_freq=50, double=False, adv=None):
     """
         Run one train epoch
     """
@@ -85,6 +85,10 @@ def train(train_loader, model, criterion, optimizer, epoch, half=True, print_fre
             input_var = input_var.half()
         if double:
             input_var = input_var.double()
+
+        # Adv. training
+        if adv:
+            input_var = adv(model, input_var, target_var)
 
         # compute output
         output = model(input_var)

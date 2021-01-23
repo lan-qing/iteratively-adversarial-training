@@ -60,7 +60,7 @@ class ResNet20Wrapper(NetWrapper):
         if cuda:
             self.model.cuda()
 
-    def fit(self, train_loader, lr=0.1, weight_decay=0.0, epoch=None):
+    def fit(self, train_loader, lr=0.1, weight_decay=0.0, epoch=None, adv=None):
         optimizer = torch.optim.SGD(self.model.parameters(), lr, weight_decay=weight_decay)
         criterion = nn.CrossEntropyLoss().cuda()
         if self.half:
@@ -69,7 +69,7 @@ class ResNet20Wrapper(NetWrapper):
             criterion.double()
 
         print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-        loss, prec = train(train_loader, self.model, criterion, optimizer, epoch, half=self.half, double=self.double)
+        loss, prec = train(train_loader, self.model, criterion, optimizer, epoch, half=self.half, double=self.double, adv=adv)
 
         return loss, prec
 
