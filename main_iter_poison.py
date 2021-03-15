@@ -76,7 +76,7 @@ def main():
     seed = 50
     print("Use random seed ", seed)
     step = 0.1
-    signature = "20210204posion"
+    signature = "20210204poison"
     rootpath = f"results/{signature}_seed{seed}/"
     if not os.path.isdir(rootpath):
         os.mkdir(rootpath)
