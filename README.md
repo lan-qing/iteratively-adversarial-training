@@ -1,6 +1,6 @@
 # iteratively-adversarial-training
 
-This repository is about the implementation of one of my research idea: 
+This repository is about the implementation of my research idea: 
 Iteratively adversarial training.
 
 ## Introduction
