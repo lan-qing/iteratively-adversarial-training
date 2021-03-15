@@ -4,6 +4,7 @@ from PIL import Image
 import torch
 import numpy as np
 from torchvision.datasets.vision import VisionDataset
+from utils import *
 
 
 class MyDataset(VisionDataset):
@@ -22,23 +23,6 @@ class MyDataset(VisionDataset):
         assert self.loaded
 
         img, target = self.data[index], self.targets[index]
-        ## It seems a bug of pytorch.
-        """
-        >>> a = torch.tensor([1,2])
-        >>> a.flip(-1)
-        tensor([2, 1])
-        >>> a = torch.tensor([1,2]).cuda()
-        >>> a.flip(-1)
-        tensor([2, 1], device='cuda:0')
-        >>> a = torch.tensor([1,2]).half().cuda()
-        >>> a.flip(-1)
-        tensor([2., 1.], device='cuda:0', dtype=torch.float16)
-        >>> a = torch.tensor([1,2]).half()
-        >>> a.flip(-1)
-        Traceback (most recent call last):
-            File "<input>", line 1, in <module>
-        RuntimeError: "flip_cpu" not implemented for 'Half'
-        """
 
         img = torch.tensor(img)
 
@@ -80,12 +64,7 @@ class MyDataset(VisionDataset):
 
     def tofile(self, index, path):
         assert self.loaded
-        data = self.data[index]
-        data = np.einsum('ijk->jki', data)
-        data = (data * 255).round()
-        data = np.uint8(data)
-        img = Image.fromarray(data)
-        img.save(path)
+        data2img(self.data[index], path)
 
     def concat_from(self, dataset1, dataset2):
         if not dataset1.loaded and not dataset2.loaded:

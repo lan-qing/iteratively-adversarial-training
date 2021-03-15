@@ -10,9 +10,16 @@ import numpy as np
 from model import ResNet20Wrapper
 from attacks import pgd_attack
 from dataset import MyDataset
-from utils import *
 
 
+def set_seed(seed):
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
+    torch.backends.cudnn.deterministic = True
+    torch.backends.cudnn.benchmark = False
+    np.random.seed(seed)
+    random.seed(seed)
+    os.environ['PYTHONHASHSEED'] = str(seed)
 
 
 def data2model(savepath, trainset, valset, batch_size=100, workers=4, adv=None):
@@ -55,23 +62,21 @@ def model2data(model, basetrainset, basetestset, trainset_path, testset_path, ba
                                                batch_size=batch_size, shuffle=False,
                                                num_workers=workers, pin_memory=True)
 
-    attack = functools.partial(pgd_attack, eps=adveps)
-
-    adv_data = model.generate_adv_data(attack, test_loader)
+    adv_data = model.generate_poison_data(test_loader)
     test_dataset = MyDataset(testset_path)
     test_dataset.save(adv_data, basetestset.targets)
 
-    adv_data = model.generate_adv_data(attack, train_loader)
+    adv_data = model.generate_poison_data(train_loader)
     train_dataset = MyDataset(trainset_path)
     train_dataset.save(adv_data, basetrainset.targets)
     return train_dataset, test_dataset
 
 
 def main():
-    seed = 55
+    seed = 50
     print("Use random seed ", seed)
     step = 0.1
-    signature = "20210116advtest"
+    signature = "20210204posion"
     rootpath = f"results/{signature}_seed{seed}/"
     if not os.path.isdir(rootpath):
         os.mkdir(rootpath)
@@ -89,14 +94,14 @@ def main():
         transforms.RandomCrop(32, 4),
     ]))
     current_testset = MyDataset(rootpath + f"current_testset/")
-    for it in [1]:
+    for it in [1, 2, 3]:
         tmpseed = random.randint(0, 2147483647)
         set_seed(tmpseed)
 
         current_trainset.concat_from(current_trainset, trainset)
         current_testset.concat_from(current_testset, testset)
         savepath = rootpath + f'model{it}.pt'
-        model = data2model(savepath, current_trainset, current_testset, adv=pgd_attack)
+        model = data2model(savepath, current_trainset, current_testset)
 
         pre_trainset = trainset
         pre_testset = testset
